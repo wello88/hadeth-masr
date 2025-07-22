@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, User, Car, Shield, Info, Save, Trash2 } from 'lucide-react'
+import { useAuth } from '../AuthContext'
 
 const Settings = () => {
+  const { user, setUser } = useAuth();
   const [userInfo, setUserInfo] = useState({
     name: '',
     phone: '',
@@ -15,11 +17,35 @@ const Settings = () => {
   })
 
   useEffect(() => {
-    const stored = localStorage.getItem('userInfo')
-    if (stored) {
-      setUserInfo(JSON.parse(stored))
+    if (user) {
+      setUserInfo({
+        name: user.name || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        carModel: user.carModel || '',
+        carYear: user.carYear || '',
+        plateNumber: user.plateNumber || '',
+        insuranceCompany: user.insuranceCompany || '',
+        policyNumber: user.policyNumber || ''
+      });
+    } else {
+      // fallback to localStorage if needed
+      const stored = localStorage.getItem('authUser');
+      if (stored) {
+        const u = JSON.parse(stored);
+        setUserInfo({
+          name: u.name || '',
+          phone: u.phone || '',
+          email: u.email || '',
+          carModel: u.carModel || '',
+          carYear: u.carYear || '',
+          plateNumber: u.plateNumber || '',
+          insuranceCompany: u.insuranceCompany || '',
+          policyNumber: u.policyNumber || ''
+        });
+      }
     }
-  }, [])
+  }, [user]);
 
   const handleInputChange = (field, value) => {
     setUserInfo(prev => ({
@@ -29,7 +55,11 @@ const Settings = () => {
   }
 
   const saveSettings = () => {
-    localStorage.setItem('userInfo', JSON.stringify(userInfo))
+    // Update AuthContext and localStorage
+    const updatedUser = { ...user, ...userInfo };
+    setUser(updatedUser);
+    localStorage.setItem('authUser', JSON.stringify(updatedUser));
+    localStorage.setItem('registeredUser', JSON.stringify(updatedUser));
     alert('تم حفظ الإعدادات بنجاح')
   }
 
@@ -46,6 +76,7 @@ const Settings = () => {
         insuranceCompany: '',
         policyNumber: ''
       })
+      setUser(null);
       alert('تم حذف جميع البيانات')
     }
   }

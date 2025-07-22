@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Phone, History, Settings as SettingsIcon, Car, MapPin, Brain, Zap, Shield, Activity } from 'lucide-react'
+import { useAuth } from '../AuthContext'
 
 const HomePage = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -9,6 +10,9 @@ const HomePage = () => {
     gyroscope: { x: 0, y: 0, z: 0 },
     isMonitoring: false
   })
+  const { logout, isAuthenticated, user, setUser } = useAuth();
+  const navigate = useNavigate();
+  const [mapStatus, setMapStatus] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -42,6 +46,38 @@ const HomePage = () => {
     }))
   }
 
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
+  // Handler for smart maps button
+  const handleSmartMapLocation = () => {
+    setMapStatus("");
+    if (navigator.geolocation) {
+      setMapStatus("جاري تحديد الموقع...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = `${pos.coords.latitude},${pos.coords.longitude}`;
+          // Save to user profile in localStorage
+          let updatedUser = user ? { ...user, location: coords } : null;
+          if (updatedUser) {
+            setUser(updatedUser);
+            localStorage.setItem('authUser', JSON.stringify(updatedUser));
+            localStorage.setItem('registeredUser', JSON.stringify(updatedUser));
+          }
+          setMapStatus("");
+          window.open(`https://www.google.com/maps?q=${coords}`, '_blank');
+        },
+        (err) => {
+          setMapStatus("لم يتم السماح بالموقع.");
+        }
+      );
+    } else {
+      setMapStatus("المتصفح لا يدعم تحديد الموقع.");
+    }
+  };
+
   return (
     <div className="container">
       {/* Modern Navigation Bar */}
@@ -68,6 +104,11 @@ const HomePage = () => {
           <Link to="/emergency" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/emergency') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>خدمات الطوارئ</Link>
           <Link to="/history" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/history') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>سجل الحوادث</Link>
           <Link to="/settings" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/settings') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>الإعدادات</Link>
+          {isAuthenticated && (
+            <button onClick={handleLogout} style={{ marginRight: 16, background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.4em 1.1em', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+              تسجيل الخروج
+            </button>
+          )}
         </div>
       </nav>
       {/* Hero Section */}
@@ -262,7 +303,7 @@ const HomePage = () => {
             <span className="text-xs">الإعدادات</span>
           </button>
         </Link>
-        <button className="btn w-full h-16 flex flex-col flex-center flex-1">
+        <button className="btn w-full h-16 flex flex-col flex-center flex-1" onClick={handleSmartMapLocation}>
           <MapPin size={20} className="mb-1" />
           <span className="text-xs">الخرائط الذكية</span>
         </button>
@@ -271,6 +312,7 @@ const HomePage = () => {
           <span className="text-xs">تحليل القيادة</span>
         </button>
       </section>
+      {mapStatus && <div className="alert" style={{ marginBottom: 16 }}>{mapStatus}</div>}
 
       {/* Current Time */}
       <section className="card" style={{ background: 'linear-gradient(90deg, #2563eb 0%, #a78bfa 100%)', color: '#fff' }}>
