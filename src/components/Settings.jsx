@@ -244,7 +244,7 @@ const Settings = () => {
             </div>
             <div className="flex flex-between items-center">
               <span style={{ color: '#64748b', fontSize: '0.98rem' }}>المطور</span>
-              <span style={{ fontWeight: 700 }}>فريق حادث مصر</span>
+              <span style={{ fontWeight: 700 }}>CrashScan</span>
             </div>
           </div>
         </div>

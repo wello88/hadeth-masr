@@ -53,13 +53,12 @@ const HomePage = () => {
 
   // Handler for smart maps button
   const handleSmartMapLocation = () => {
-    setMapStatus("");
+    setMapStatus("للحصول على موقع دقيق، استخدم هاتفك وفعّل GPS ويفضل استخدام متصفح Google Chrome أو Safari.");
     if (navigator.geolocation) {
-      setMapStatus("جاري تحديد الموقع...");
+      setMapStatus("جاري تحديد الموقع بدقة عالية...");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = `${pos.coords.latitude},${pos.coords.longitude}`;
-          // Save to user profile in localStorage
           let updatedUser = user ? { ...user, location: coords } : null;
           if (updatedUser) {
             setUser(updatedUser);
@@ -70,8 +69,12 @@ const HomePage = () => {
           window.open(`https://www.google.com/maps?q=${coords}`, '_blank');
         },
         (err) => {
-          setMapStatus("لم يتم السماح بالموقع.");
-        }
+          if (err.code === 1) setMapStatus("تم رفض إذن الموقع من قبل المستخدم.");
+          else if (err.code === 2) setMapStatus("تعذر تحديد الموقع. حاول مرة أخرى.");
+          else if (err.code === 3) setMapStatus("انتهت مهلة تحديد الموقع. تأكد من تفعيل GPS.");
+          else setMapStatus("حدث خطأ أثناء تحديد الموقع.");
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     } else {
       setMapStatus("المتصفح لا يدعم تحديد الموقع.");
@@ -95,7 +98,6 @@ const HomePage = () => {
         zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Removed logo icon */}
           <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.15rem' }}>CrashScan</span>
         </div>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', fontWeight: 700, fontSize: '1.05rem' }}>
@@ -104,6 +106,30 @@ const HomePage = () => {
           <Link to="/emergency" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/emergency') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>خدمات الطوارئ</Link>
           <Link to="/history" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/history') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>سجل الحوادث</Link>
           <Link to="/settings" style={{ color: 'var(--primary-dark)', textDecoration: 'none', borderBottom: window.location.pathname.startsWith('/settings') ? '2.5px solid var(--primary)' : 'none', paddingBottom: 2 }}>الإعدادات</Link>
+          {/* زر GPS يظهر فقط إذا كان هناك إحداثيات */}
+          {user?.location && (
+            <a
+              href={`https://www.google.com/maps?q=${user.location}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '0.4em 1.1em',
+                fontWeight: 700,
+                fontSize: '1rem',
+                textDecoration: 'none',
+                marginRight: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <MapPin size={18} style={{ marginLeft: 2 }} />
+              GPS
+            </a>
+          )}
           {isAuthenticated && (
             <button onClick={handleLogout} style={{ marginRight: 16, background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.4em 1.1em', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
               تسجيل الخروج
